@@ -1,39 +1,48 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\models;
 
-class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface
+use yii\db\ActiveRecord;
+use Yii;
+use yii\base\Exception as YiiException;
+
+/**
+ * @property int id
+ * @property int is_admin
+ * @property string username
+ * @property string name
+ * @property string surname
+ * @property string password
+ * @property string created_at
+ */
+class User extends ActiveRecord implements \yii\web\IdentityInterface
 {
-    public $id;
-    public $username;
-    public $password;
-    public $authKey;
-    public $accessToken;
+    /**
+     * @var string
+     */
+    public $authKey = "Test1111";
 
-    private static $users = [
-        '100' => [
-            'id' => '100',
-            'username' => 'admin',
-            'password' => 'admin',
-            'authKey' => 'test100key',
-            'accessToken' => '100-token',
-        ],
-        '101' => [
-            'id' => '101',
-            'username' => 'demo',
-            'password' => 'demo',
-            'authKey' => 'test101key',
-            'accessToken' => '101-token',
-        ],
-    ];
+    /**
+     * @var
+     */
+    private static $users;
 
+    /**
+     * @return string
+     */
+    public static function tableName()
+    {
+        return 'user';
+    }
 
     /**
      * {@inheritdoc}
      */
     public static function findIdentity($id)
     {
-        return isset(self::$users[$id]) ? new static(self::$users[$id]) : null;
+        return static::findOne($id);
     }
 
     /**
@@ -58,13 +67,7 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface
      */
     public static function findByUsername($username)
     {
-        foreach (self::$users as $user) {
-            if (strcasecmp($user['username'], $username) === 0) {
-                return new static($user);
-            }
-        }
-
-        return null;
+        return static::findOne(['username' => strtolower($username)]);
     }
 
     /**
@@ -99,6 +102,67 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface
      */
     public function validatePassword($password)
     {
-        return $this->password === $password;
+        return Yii::$app->security->validatePassword($password, $this->password);
+    }
+
+    /**
+     * @param string $password
+     * @return $this
+     * @throws YiiException
+     */
+    public function setPassword(string $password): User
+    {
+        $this->password = Yii::$app->security->generatePasswordHash($password);
+        return $this;
+    }
+
+    /**
+     * @param string $name
+     * @return $this
+     */
+    public function setName(string $name): User
+    {
+        $this->name = $name;
+        return $this;
+    }
+
+    /**
+     * @param string $surname
+     * @return $this
+     */
+    public function setSurname(string $surname): User
+    {
+        $this->surname = $surname;
+        return $this;
+    }
+
+    /**
+     * @param string $username
+     * @return $this
+     */
+    public function setUsername(string $username): User
+    {
+        $this->username = $username;
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function setCreatedAt(): User
+    {
+        $this->created_at = (new \DateTimeImmutable())->format(DATE_ATOM);
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function save($runValidation = true, $attributeNames = null)
+    {
+        if ($this->findByUsername(strtolower($this->username))) {
+            throw new YiiException("User with such username already exist.");
+        }
+        return parent::save($runValidation, $attributeNames);
     }
 }
