@@ -9,6 +9,7 @@ use yii\bootstrap5\Breadcrumbs;
 use yii\bootstrap5\Html;
 use yii\bootstrap5\Nav;
 use yii\bootstrap5\NavBar;
+use app\models\User;
 
 AppAsset::register($this);
 
@@ -54,7 +55,11 @@ $this->registerLinkTag(['rel' => 'icon', 'type' => 'image/x-icon', 'href' => Yii
                     . '</li>',
             Yii::$app->user->isGuest
                 ? ['label' => 'Sign up', 'url' => ['/site/signup']]
-                : ''
+                : '',
+            !Yii::$app->user->isGuest
+                ? (new User())->findIdentity(Yii::$app->user->getId())->isAdmin() ?
+                ['label' => 'Create post', 'url' => ['/post/create']] :
+                '' : ''
         ]
     ]);
     NavBar::end();

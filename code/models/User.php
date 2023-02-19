@@ -79,6 +79,14 @@ class User extends ActiveRecord implements \yii\web\IdentityInterface
     }
 
     /**
+     * @return bool
+     */
+    public function isAdmin()
+    {
+        return (bool)$this->is_admin;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function getAuthKey()

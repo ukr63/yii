@@ -11,6 +11,7 @@ use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\ContactForm;
 use yii\base\Exception;
+use app\models\Post;
 
 class SiteController extends Controller
 {
@@ -63,7 +64,16 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        return $this->render('index');
+        $posts = Post::find();
+        if (Yii::$app->user->isGuest) {
+            $posts = $posts->where(['is_for_authorization_user' => 0])->orderBy(['id' => SORT_DESC])->all();
+        } else {
+            $posts = $posts->orderBy(['id' => SORT_DESC])->all();
+        }
+
+        return $this->render('index', [
+            'posts' => $posts
+        ]);
     }
 
     /**
@@ -128,6 +138,9 @@ class SiteController extends Controller
         return $this->render('about');
     }
 
+    /**
+     * @return string|Response
+     */
     public function actionSignup()
     {
         $error = null;
